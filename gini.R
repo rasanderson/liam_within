@@ -71,7 +71,11 @@ colnames(Dominant) <- c("quad_no", "Row", 10, 20, 30, 40, 50, 60, 70, 80, 90, 10
 Dominant[1,] = "" ## add empty line to streamline with other quadrat rows
 Dominant[1838,] = "" ## add line after last quadrat to streamline with other quadrat rows
 
-quad1_dom <- subset(Dominant, quad_no == "1")
+spat_all_quads <- NULL
+for(quad_no_code in 1:167){
+print(quad_no_code)  
+quad1_dom <- subset(Dominant, quad_no == as.character(quad_no_code))
+#quad1_dom <- subset(Dominant, quad_no == "1")
 quad1_dom_mat <- as.matrix(quad1_dom[,-1])
 quad1_dom_tab <- table(quad1_dom_mat[,-1]) # gives count of each species in the quadrat
 quad1_dom_tab
@@ -91,7 +95,7 @@ quad_lng     <- quad1_lng
 spp_in_quad  <- names(quad_dom_tab)
 spat_all     <- NULL
 for (spp_name in seq_along(spp_in_quad)){
-  quad_no <- 138
+  quad_no <- quad_no_code
   spp_text <- names(quad_dom_tab)[spp_name]
   quad_spp_lng <- quad_lng %>% filter(Species == spp_text)
   quad_spp_wde <- quad_spp_lng %>% reshape2::dcast(Row ~ Col, drop = FALSE, fill = 0)
@@ -100,11 +104,11 @@ for (spp_name in seq_along(spp_in_quad)){
   quad_spp_mat <- as.matrix(quad_spp_wde[,-1])
   
   quad_ccl = ConnCompLabel(quad_spp_mat)
-  print(spp_text)
-  print(quad_ccl)
+  #print(spp_text)
+  #print(quad_ccl)
   #image(t(quad_ccl[12:1,]), col=c('white',rainbow(length(unique(quad_ccl))-1)), main = print(spp_text)) #due to spaces matrix is 12 (y-axis)x10 (x-axis)
   #grid(nx=10, ny=12, col = "grey", lty = 1) # added post roy
-  print(PatchStat(quad_ccl))
+  #print(PatchStat(quad_ccl))
   
   # Store the spatial stats
   # Need to duplicate spp text names in final output table
@@ -112,6 +116,20 @@ for (spp_name in seq_along(spp_in_quad)){
   patch_stats <- PatchStat(quad_ccl)
   patch_stats <- cbind(quad_no, spp_duplicate, patch_stats)
   spat_all <- rbind(spat_all, patch_stats)
-  readline()
+  #readline()
+}
+spat_all_quads <- rbind(spat_all_quads, spat_all)
 }
 #write.csv(spat_all, file = "Results/Patch_Stats/Individual_quadrats/Q138_DOMINANT.csv")
+
+# Filter out the background quadrats and calculate Gini
+gini_lng <- spat_all_quads %>%
+  filter(patchID != 0) %>% 
+  group_by(quad_no, spp_duplicate) %>% 
+  summarise( gini = Gini(n.cell))
+
+# If only one patch of a spp in a quadrat not possible to calc Gini
+gini_lng$gini[is.nan(gini_lng$gini)] <- NA
+
+# Make wide
+gini_wde <- pivot_wider(gini_lng, names_from = spp_duplicate, values_from = gini)
