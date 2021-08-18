@@ -1,4 +1,5 @@
-library(DescTools)
+#library(DescTools)
+library(ineq) # more accurate than DescTools when comparing to Weiner and Solbrig
 library(mvabund)
 library(dplyr)
 library(tidyverse)
@@ -12,12 +13,15 @@ rm(list=ls())
 # Jacob Weiner 1, and Otto T. Solbrig
 # n = c(rep(1, 50), rep(2, 5) )
 # Gini(n)
+# ineq(n)
 # 
 # n = c(rep(1, 50), rep(10, 5) )
 # Gini(n)
+# ineq(n)
 # 
 # n = c(rep(101, 50), rep(102, 5) )
 # Gini(n)
+# ineq(n)
 
 #ashtrees_env <- read.csv("Data/Biotic_data/ashtrees_env_variables_14-01-19.csv")
 ashtrees_env <- read.csv("data/ashtrees_env_variables_14-01-19.csv")
@@ -126,10 +130,10 @@ spat_all_quads <- rbind(spat_all_quads, spat_all)
 gini_lng <- spat_all_quads %>%
   filter(patchID != 0) %>% 
   group_by(quad_no, spp_duplicate) %>% 
-  summarise( gini = Gini(n.cell))
+  summarise( gini = ineq(n.cell))
 
 # If only one patch of a spp in a quadrat not possible to calc Gini
-gini_lng$gini[is.nan(gini_lng$gini)] <- NA
+#gini_lng$gini[is.nan(gini_lng$gini)] <- NA
 
 # Make wide
 gini_wde <- pivot_wider(gini_lng, names_from = spp_duplicate, values_from = gini)
